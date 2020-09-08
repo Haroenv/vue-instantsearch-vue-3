@@ -23,20 +23,24 @@
 </template>
 
 <script>
-import algoliasearch from "algoliasearch/lite";
-import {AisInstantSearch} from "vue-instantsearch/src/widgets";
-import AisSearchBox from "vue-instantsearch/src/components/SearchBox";
-import AisHits from "vue-instantsearch/src/components/Hits";
-import AisHighlight from "vue-instantsearch/src/components/Highlight";
-import AisConfigure from "vue-instantsearch/src/components/Configure";
+import algoliasearch from 'algoliasearch/lite';
+import {
+  AisInstantSearch,
+  AisSearchBox,
+  AisHits,
+  AisHighlight,
+  AisConfigure,
+} from 'vue-instantsearch/src/widgets';
+// import like this is possible too
+// import AisSearchBox from "vue-instantsearch/src/components/SearchBox";
 
 export default {
-  name: "App",
+  name: 'App',
   data() {
     return {
       searchClient: algoliasearch(
-        "latency",
-        "6be0576ff61c053d5f9a3225e2a90f76"
+        'latency',
+        '6be0576ff61c053d5f9a3225e2a90f76'
       ),
     };
   },
