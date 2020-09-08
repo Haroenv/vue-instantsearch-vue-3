@@ -1,21 +1,46 @@
 diff --git a/node_modules/vue-instantsearch/src/components/Configure.js b/node_modules/vue-instantsearch/src/components/Configure.js
-index 8c5321e..01ba1c0 100644
+index 8c5321e..adcc292 100644
 --- a/node_modules/vue-instantsearch/src/components/Configure.js
 +++ b/node_modules/vue-instantsearch/src/components/Configure.js
-@@ -17,7 +17,7 @@ export default {
+@@ -1,6 +1,7 @@
+ import { createWidgetMixin } from '../mixins/widget';
+ import { createSuitMixin } from '../mixins/suit';
+ import { connectConfigure } from 'instantsearch.js/es/connectors';
++import * as Vue from 'vue';
+ 
+ export default {
+   inheritAttrs: false,
+@@ -17,17 +18,22 @@ export default {
      },
    },
    render(createElement) {
 -    if (!this.state || !this.$scopedSlots.default) {
-+    if (!this.state || (!this.$slots.default && !this.$scopedSlots.default)) {
++    const slot =
++      'default' in this.$slots
++        ? this.$slots.default
++        : this.$scopedSlots.default;
++
++    if (!this.state || !slot) {
        return null;
      }
  
+-    return createElement(
++    return (Vue.h || createElement)(
+       'div',
+       {
+         class: this.suit(),
+       },
+       [
+-        this.$scopedSlots.default({
++        slot({
+           refine: this.state.refine,
+           searchParameters: this.state.widgetParams.searchParameters,
+         }),
 diff --git a/node_modules/vue-instantsearch/src/components/Highlighter.vue b/node_modules/vue-instantsearch/src/components/Highlighter.vue
-index bee0e49..467eb2d 100644
+index bee0e49..a518ee5 100644
 --- a/node_modules/vue-instantsearch/src/components/Highlighter.vue
 +++ b/node_modules/vue-instantsearch/src/components/Highlighter.vue
-@@ -4,44 +4,48 @@
+@@ -4,13 +4,25 @@
        v-for="({ value, isHighlighted }, index) in parsedHighlights"
        :class="[isHighlighted && suit('highlighted')]"
        :key="index"
@@ -26,45 +51,24 @@ index bee0e49..467eb2d 100644
  </template>
  
  <script>
--import { parseAlgoliaHit } from '../util/parseAlgoliaHit';
-+import { parseAlgoliaHit } from "../util/parseAlgoliaHit";
-+import * as Vue from "vue";
+ import { parseAlgoliaHit } from '../util/parseAlgoliaHit';
++import * as Vue from 'vue';
 +
 +const TextNode =
-+  Vue.version && Vue.version.split(".")[0] === "3"
++  Vue.version && Vue.version.split('.')[0] === '3'
 +    ? (props, context) => context.slots.default()
 +    : {
 +        functional: true,
 +        render(createElement, context) {
 +          const slots = context.slots();
 +          return slots.default;
-+        }
++        },
 +      };
  
  export default {
--  name: 'AisHighlighter',
-+  name: "AisHighlighter",
-   props: {
-     hit: {
-       type: Object,
--      required: true,
-+      required: true
-     },
-     attribute: {
-       type: String,
--      required: true,
-+      required: true
-     },
-     highlightedTagName: {
-       type: String,
--      default: 'mark',
-+      default: "mark"
-     },
-     suit: { type: Function, required: true },
-     highlightProperty: { type: String, required: true },
-     preTag: { type: String, required: true },
--    postTag: { type: String, required: true },
-+    postTag: { type: String, required: true }
+   name: 'AisHighlighter',
+@@ -33,15 +45,7 @@ export default {
+     postTag: { type: String, required: true },
    },
    data() {
 -    return {
@@ -80,28 +84,44 @@ index bee0e49..467eb2d 100644
    },
    computed: {
      parsedHighlights() {
-@@ -50,9 +54,9 @@ export default {
-         hit: this.hit,
-         highlightProperty: this.highlightProperty,
-         preTag: this.preTag,
--        postTag: this.postTag,
-+        postTag: this.postTag
-       });
--    },
--  },
-+    }
-+  }
- };
- </script>
+diff --git a/node_modules/vue-instantsearch/src/components/Index.js b/node_modules/vue-instantsearch/src/components/Index.js
+index 2c2fa38..4b86826 100644
+--- a/node_modules/vue-instantsearch/src/components/Index.js
++++ b/node_modules/vue-instantsearch/src/components/Index.js
+@@ -1,6 +1,7 @@
+ import { createSuitMixin } from '../mixins/suit';
+ import { createWidgetMixin } from '../mixins/widget';
+ import indexWidget from 'instantsearch.js/es/widgets/index/index';
++import * as Vue from 'vue';
+ 
+ // wrapped in a dummy function, since indexWidget doesn't render
+ const connectIndex = () => indexWidget;
+@@ -28,8 +29,14 @@ export default {
+       required: false,
+     },
+   },
+-  render(createElement) {
+-    return createElement('div', {}, this.$slots.default);
++  render(h) {
++    return (Vue.h || h)(
++      'div',
++      {},
++      typeof this.$slots.default === 'function'
++        ? this.$slots.default()
++        : this.$slots.default
++    );
+   },
+   computed: {
+     widgetParams() {
 diff --git a/node_modules/vue-instantsearch/src/components/InstantSearch.js b/node_modules/vue-instantsearch/src/components/InstantSearch.js
-index e5d54f0..e1e4f3d 100644
+index e5d54f0..d9d15eb 100644
 --- a/node_modules/vue-instantsearch/src/components/InstantSearch.js
 +++ b/node_modules/vue-instantsearch/src/components/InstantSearch.js
 @@ -1,6 +1,7 @@
  import instantsearch from 'instantsearch.js/es';
  import { createInstantSearchComponent } from '../util/createInstantSearchComponent';
  import { warn } from '../util/warn';
-+import {h} from 'vue'
++import * as Vue from 'vue';
  
  const oldApiWarning = `Vue InstantSearch: You used the prop api-key or app-id.
  These have been replaced by search-client.
@@ -111,20 +131,76 @@ index e5d54f0..e1e4f3d 100644
    },
 -  render(createElement) {
 -    return createElement(
-+  render(localH) {
-+    return (h || localH)(
++  render(h) {
++    return (Vue.h || h)(
        'div',
        {
          class: {
-@@ -92,7 +93,7 @@ export default createInstantSearchComponent({
+@@ -92,7 +93,9 @@ export default createInstantSearchComponent({
            [this.suit('', 'ssr')]: false,
          },
        },
 -      this.$slots.default
-+      typeof this.$slots.default === 'function' ? this.$slots.default() : this.$slots.default
++      typeof this.$slots.default === 'function'
++        ? this.$slots.default()
++        : this.$slots.default
      );
    },
  });
+diff --git a/node_modules/vue-instantsearch/src/components/InstantSearchSsr.js b/node_modules/vue-instantsearch/src/components/InstantSearchSsr.js
+index eadcdda..60e4a22 100644
+--- a/node_modules/vue-instantsearch/src/components/InstantSearchSsr.js
++++ b/node_modules/vue-instantsearch/src/components/InstantSearchSsr.js
+@@ -1,4 +1,5 @@
+ import { createInstantSearchComponent } from '../util/createInstantSearchComponent';
++import * as Vue from 'vue';
+ 
+ export default createInstantSearchComponent({
+   name: 'AisInstantSearchSsr',
+@@ -14,8 +15,8 @@ export default createInstantSearchComponent({
+       instantSearchInstance: this.$_ais_ssrInstantSearchInstance,
+     };
+   },
+-  render(createElement) {
+-    return createElement(
++  render(h) {
++    return (Vue.h || h)(
+       'div',
+       {
+         class: {
+@@ -23,7 +24,9 @@ export default createInstantSearchComponent({
+           [this.suit('', 'ssr')]: true,
+         },
+       },
+-      this.$slots.default
++      typeof this.$slots.default === 'function'
++        ? this.$slots.default()
++        : this.$slots.default
+     );
+   },
+ });
+diff --git a/node_modules/vue-instantsearch/src/components/RatingMenu.vue b/node_modules/vue-instantsearch/src/components/RatingMenu.vue
+index c886bb2..ae625aa 100644
+--- a/node_modules/vue-instantsearch/src/components/RatingMenu.vue
++++ b/node_modules/vue-instantsearch/src/components/RatingMenu.vue
+@@ -45,7 +45,7 @@
+                 width="24"
+                 height="24"
+                 :class="[suit('starIcon'), suit('starIcon--full')]"
+-                :key="n"
++                :key="n + '-full'"
+               >
+                 <use xlink:href="#ais-RatingMenu-starSymbol" />
+               </svg>
+@@ -56,7 +56,7 @@
+                 aria-hidden="true"
+                 width="24"
+                 height="24"
+-                :key="n"
++                :key="n + '-empty'"
+               >
+                 <use xlink:href="#ais-RatingMenu-starEmptySymbol" />
+               </svg>
 diff --git a/node_modules/vue-instantsearch/src/components/SearchInput.vue b/node_modules/vue-instantsearch/src/components/SearchInput.vue
 index 1984697..776833c 100644
 --- a/node_modules/vue-instantsearch/src/components/SearchInput.vue

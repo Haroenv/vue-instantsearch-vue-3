@@ -10,6 +10,9 @@
   "dependencies": {
     "algoliasearch": "^4.4.0",
     "core-js": "^3.6.5",
+    "mitt": "^2.1.0",
+    "patch-package": "^6.2.2",
+    "postinstall-postinstall": "^2.1.0",
     "vue": "^3.0.0-0",
     "vue-instantsearch": "^3.2.0"
   },
